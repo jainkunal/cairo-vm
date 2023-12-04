@@ -316,13 +316,14 @@ impl VirtualMachine {
     fn deduce_dst(
         &self,
         instruction: &Instruction,
-        res: Option<&MaybeRelocatable>,
-    ) -> Option<MaybeRelocatable> {
-        match instruction.opcode {
-            Opcode::AssertEq => res.cloned(),
-            Opcode::Call => Some(self.get_fp().into()),
-            _ => None,
-        }
+        res: &Option<MaybeRelocatable>,
+    ) -> Result<MaybeRelocatable, VirtualMachineError> {
+        let dst = match (instruction.opcode, res) {
+            (Opcode::AssertEq, Some(res)) => res.clone(),
+            (Opcode::Call, _) => MaybeRelocatable::from(self.run_context.get_fp()),
+            _ => return Err(VirtualMachineError::NoDst),
+        };
+        Ok(dst)
     }
 
     fn opcode_assertions(
@@ -545,20 +546,6 @@ impl VirtualMachine {
         Ok(op1)
     }
 
-    fn compute_dst_deductions(
-        &self,
-        instruction: &Instruction,
-        res: &Option<MaybeRelocatable>,
-    ) -> Result<MaybeRelocatable, VirtualMachineError> {
-        let dst_op = match instruction.opcode {
-            Opcode::AssertEq if res.is_some() => Option::clone(res),
-            Opcode::Call => Some(MaybeRelocatable::from(self.run_context.get_fp())),
-            _ => self.deduce_dst(instruction, res.as_ref()),
-        };
-        let dst = dst_op.ok_or(VirtualMachineError::NoDst)?;
-        Ok(dst)
-    }
-
     /// Compute operands and result, trying to deduce them if normal memory access returns a None
     /// value.
     pub fn compute_operands(
@@ -609,7 +596,7 @@ impl VirtualMachine {
             Some(dst) => dst,
             None => {
                 deduced_operands.set_dst(true);
-                self.compute_dst_deductions(instruction, &res)?
+                self.deduce_dst(instruction, &res)?
             }
         };
         let accessed_addresses = OperandsAddresses {
@@ -1014,7 +1001,9 @@ impl VirtualMachine {
     /// Returns a list of addresses of memory cells that constitute the public memory.
     pub fn get_public_memory_addresses(&self) -> Result<Vec<(usize, usize)>, VirtualMachineError> {
         if let Some(relocation_table) = &self.relocation_table {
-            Ok(self.segments.get_public_memory_addresses(relocation_table))
+            self.segments
+                .get_public_memory_addresses(relocation_table)
+                .map_err(VirtualMachineError::Memory)
         } else {
             Err(MemoryError::UnrelocatedMemory.into())
         }
@@ -1046,7 +1035,10 @@ impl VirtualMachine {
                         return Err(RunnerError::NoStopPointer(Box::new(builtin.name())).into());
                     };
 
-                Ok((builtin.name(), relocate(addresses)?))
+                Ok((
+                    builtin.name().strip_suffix("_builtin").unwrap_or_default(),
+                    relocate(addresses)?,
+                ))
             })
             .collect()
     }
@@ -2456,8 +2448,8 @@ mod tests {
 
         let res = MaybeRelocatable::Int(Felt252::new(7));
         assert_eq!(
-            Some(MaybeRelocatable::Int(Felt252::new(7))),
-            vm.deduce_dst(&instruction, Some(&res))
+            MaybeRelocatable::Int(Felt252::new(7)),
+            vm.deduce_dst(&instruction, &Some(res)).unwrap()
         );
     }
 
@@ -2480,7 +2472,7 @@ mod tests {
 
         let vm = vm!();
 
-        assert_eq!(None, vm.deduce_dst(&instruction, None));
+        assert!(vm.deduce_dst(&instruction, &None).is_err());
     }
 
     #[test]
@@ -2503,8 +2495,8 @@ mod tests {
         let vm = vm!();
 
         assert_eq!(
-            Some(MaybeRelocatable::from((1, 0))),
-            vm.deduce_dst(&instruction, None)
+            MaybeRelocatable::from((1, 0)),
+            vm.deduce_dst(&instruction, &None).unwrap()
         );
     }
 
@@ -2527,7 +2519,7 @@ mod tests {
 
         let vm = vm!();
 
-        assert_eq!(None, vm.deduce_dst(&instruction, None));
+        assert!(vm.deduce_dst(&instruction, &None).is_err());
     }
 
     #[test]

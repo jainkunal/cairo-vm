@@ -3,6 +3,71 @@
 #### Upcoming Changes
 * feat: add a `--tracer` option which hosts a web server that shows the line by line execution of cairo code along with memoery registers [#1265](https://github.com/lambdaclass/cairo-vm/pull/1265)
 
+#### [0.9.0] - 2023-10-03
+
+* fix: Default to empty attributes vector when the field is missing from the program JSON [#1450](https://github.com/lambdaclass/cairo-vm/pull/1450)
+
+* fix: Change serialization of CairoPieMemory to match Python's binary format [#1447](https://github.com/lambdaclass/cairo-vm/pull/1447)
+
+* fix: Remove Deserialize derive from CairoPie and fix Serialize implementation to match Python's [#1444](https://github.com/lambdaclass/cairo-vm/pull/1444)
+
+* fix: ec_recover hints no longer panic when divisor is 0 [#1433](https://github.com/lambdaclass/cairo-vm/pull/1433)
+
+* feat: Implement the Serialize and Deserialize traits for the CairoPie struct [#1438](https://github.com/lambdaclass/cairo-vm/pull/1438)
+
+* fix: Using UINT256_HINT no longer panics when b is greater than 2^256 [#1430](https://github.com/lambdaclass/cairo-vm/pull/1430)
+
+* feat: Added a differential fuzzer for programs with whitelisted hints [#1358](https://github.com/lambdaclass/cairo-vm/pull/1358)
+
+* fix(breaking): Change return type of `get_execution_resources` to `RunnerError` [#1398](https://github.com/lambdaclass/cairo-vm/pull/1398)
+
+* Don't build wasm-demo in `build` target + add ci job to run the wasm demo [#1393](https://github.com/lambdaclass/cairo-vm/pull/1393)
+
+    * Adds default-members to workspace
+    * Crate `examples/wasm-demo` is no longer built during `make build`
+    * `make check` no longer compiles the cairo file used in the wasm-demo
+    * Removes Makefile targets `examples/wasm-demo/src/array_sum.json` & `example_program`
+    * `wasm-demo` now uses the compiled cairo file in `cairo_programs` directory instead of its own copy
+
+* feat: Add `Program::new_for_proof` [#1396](https://github.com/lambdaclass/cairo-vm/pull/1396)
+
+#### [0.8.7] - 2023-8-28
+
+* Add REDUCE_V2 hint [#1420](https://github.com/lambdaclass/cairo-vm/pull/1420):
+    * Implement REDUCE_V2 hint
+    * Rename hint REDUCE -> REDUCE_V1
+
+* BREAKING: Add `disable_trace_padding` to `CairoRunConfig`[#1233](https://github.com/lambdaclass/cairo-rs/pull/1233)
+
+* feat: Implement `CairoRunner.get_cairo_pie`[#1375](https://github.com/lambdaclass/cairo-vm/pull/1375)
+
+* fix: Compare air_public_inputs against python vm + Fix how public memory is built [#391](https://github.com/lambdaclass/cairo-vm/pull/1391)
+
+    BugFixes:
+
+    *  `CairoRunner.finalize_segments` now builds the output builtin's public memory (if applicable).
+    * `MemorySegmentManager.get_public_memory_addresses` logic fixed.
+    * `MemorySegmentManager.finalize` no longer skips segments when their public memory is None
+
+    Minor changes:
+
+    * `VirtualMachine.get_public_memory_addresses` now strips the "_builtin" suffix from builtin names
+    * `MemorySegmentAddresses.stop_address` renamed to `stop_ptr`
+
+    Overall these changes make the the air public input file (obtained through the --air_public_input flag) equivalent to the ones outputted by the cairo-lang version
+
+* fix: Fix `SPLIT_FELT` hint [#1387](https://github.com/lambdaclass/cairo-vm/pull/1387)
+
+* refactor: combine `Program.hints` and `Program.hints_ranges` into custom collection [#1366](https://github.com/lambdaclass/cairo-vm/pull/1366)
+
+* fix: Fix div_mod [#1383](https://github.com/lambdaclass/cairo-vm/pull/1383)
+
+  * Fixes `div_mod` function so that it behaves like the cairo-lang version
+  * Various functions in the `math_utils` crate can now return a `MathError` : `div_mod`, `ec_add`, `line_slope`, `ec_double`, `ec_double_slope`.
+  * Fixes `UINT256_MUL_INV_MOD_P` hint so that it behaves like the python code.
+
+#### [0.8.6] - 2023-8-11
+
 * fix: Handle error in hint `UINT256_MUL_DIV_MOD` when divides by zero [#1367](https://github.com/lambdaclass/cairo-vm/pull/1367)
 
 * Add HintError::SyscallError and VmErrors::HINT_ERROR_STR constant [#1357](https://github.com/lambdaclass/cairo-rs/pull/1357)
@@ -51,7 +116,7 @@
     `get_hint_data(self, &[HintReference], &mut dyn HintProcessor) -> Result<Vec<Box<dyn Any>, VirtualMachineError>`
   * Hook methods receive `&[Box<dyn Any>]` rather than `&HashMap<usize, Vec<Box<dyn Any>>>`
 
-#### [0.8.4] 
+#### [0.8.4]
 **YANKED**
 
 #### [0.8.3]
@@ -138,12 +203,12 @@
 
 * BREAKING: Change `RunResources` usage:
     * Modify field type `RunResources.n_steps: Option<usize>,`
-    
+
     * Public Api Changes:
         *  CairoRunner::run_until_pc: Now receive a `&mut RunResources` instead of an `&mut Option<RunResources>`
         *  CairoRunner::run_from_entrypoint: Now receive a `&mut RunResources` instead of an `&mut Option<RunResources>`
         * VirtualMachine::Step: Add `&mut RunResources` as input
-        * Trait HintProcessor::execute_hint: Add  `&mut RunResources` as an input 
+        * Trait HintProcessor::execute_hint: Add  `&mut RunResources` as an input
 
 * perf: accumulate `min` and `max` instruction offsets during run to speed up range check [#1080](https://github.com/lambdaclass/cairo-vm/pull/)
   BREAKING: `Cairo_runner::get_perm_range_check_limits` no longer returns an error when called without trace enabled, as it no longer depends on it
@@ -157,7 +222,7 @@
 * BREAKING: Add no_std compatibility to cairo-vm (cairo-1-hints feature still not supported)
     * Move the vm to its own directory and crate, different from the workspace [#1215](https://github.com/lambdaclass/cairo-vm/pull/1215)
 
-    * Add an `ensure_no_std` crate that the CI will use to check that new changes don't revert `no_std` support [#1215](https://github.com/lambdaclass/cairo-vm/pull/1215) [#1232](https://github.com/lambdaclass/cairo-vm/pull/1232) 
+    * Add an `ensure_no_std` crate that the CI will use to check that new changes don't revert `no_std` support [#1215](https://github.com/lambdaclass/cairo-vm/pull/1215) [#1232](https://github.com/lambdaclass/cairo-vm/pull/1232)
 
     * replace the use of `num-prime::is_prime` by a custom implementation, therefore restoring `no_std` compatibility [#1238](https://github.com/lambdaclass/cairo-vm/pull/1238)
 
@@ -458,7 +523,7 @@
 
     value = x_inv = div_mod(1, x, SECP_P)
     ```
-    
+
 * Implement hint for `starkware.cairo.common.cairo_keccak.keccak._copy_inputs` as described by whitelist `starknet/security/whitelists/cairo_keccak.json` [#1058](https://github.com/lambdaclass/cairo-vm/pull/1058)
 
     `BuiltinHintProcessor` now supports the following hint:
@@ -1107,7 +1172,7 @@
 * Implement hint on vrf.json lib [#1049](https://github.com/lambdaclass/cairo-vm/pull/1049)
 
     `BuiltinHintProcessor` now supports the following hint:
-    
+
     ```python
         def split(num: int, num_bits_shift: int, length: int):
             a = []
@@ -1250,19 +1315,19 @@
 * Implement hint on uint384_extension lib [#983](https://github.com/lambdaclass/cairo-vm/pull/983)
 
     `BuiltinHintProcessor` now supports the following hint:
-    
+
     ```python
         def split(num: int, num_bits_shift: int, length: int):
             a = []
             for _ in range(length):
                 a.append( num & ((1 << num_bits_shift) - 1) )
-                num = num >> num_bits_shift 
+                num = num >> num_bits_shift
             return tuple(a)
 
         def pack(z, num_bits_shift: int) -> int:
             limbs = (z.d0, z.d1, z.d2)
             return sum(limb << (num_bits_shift * i) for i, limb in enumerate(limbs))
-            
+
         def pack_extended(z, num_bits_shift: int) -> int:
             limbs = (z.d0, z.d1, z.d2, z.d3, z.d4, z.d5)
             return sum(limb << (num_bits_shift * i) for i, limb in enumerate(limbs))
@@ -1298,13 +1363,13 @@
     * Add missing hints [#1014](https://github.com/lambdaclass/cairo-vm/pull/1014):
         `BuiltinHintProcessor` now supports the following hints:
         ```python
-            from starkware.cairo.common.cairo_secp.secp256r1_utils import SECP256R1_P as SECP_P 
+            from starkware.cairo.common.cairo_secp.secp256r1_utils import SECP256R1_P as SECP_P
         ```
-        and: 
+        and:
         ```python
             from starkware.cairo.common.cairo_secp.secp_utils import pack
             from starkware.python.math_utils import line_slope
-            
+
             # Compute the slope.
             x0 = pack(ids.point0.x, PRIME)
             y0 = pack(ids.point0.y, PRIME)
@@ -1323,7 +1388,7 @@
         s = pack(ids.s, PRIME) % N
         value = res = div_mod(x, s, N)
         ```
-        and: 
+        and:
         ```python
         value = k = safe_div(res * s - x, N)
         ```

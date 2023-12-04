@@ -14,8 +14,8 @@ A faster and safer implementation of the Cairo VM in Rust
 [![Telegram Chat][tg-badge]][tg-url]
 
 [pr-welcome]: https://img.shields.io/static/v1?color=orange&label=PRs&style=flat&message=welcome
-[tg-badge]: https://img.shields.io/static/v1?color=green&logo=telegram&label=chat&style=flat&message=join
-[tg-url]: https://t.me/starknet_rs
+[tg-badge]: https://img.shields.io/endpoint?url=https%3A%2F%2Ftg.sumanjay.workers.dev%2FLambdaStarkNet%2F&logo=telegram&label=chat&color=neon
+[tg-url]: https://t.me/LambdaStarkNet
 
 </div>
 
@@ -80,7 +80,7 @@ It's Turing-complete and it was created by [Starkware](https://starkware.co/) as
 
 These are needed in order to compile and use the project.
 
-- [Rust 1.69.0 or newer](https://www.rust-lang.org/tools/install)
+- [Rust 1.70.0 or newer](https://www.rust-lang.org/tools/install)
 - Cargo
 
 #### Optional
@@ -116,7 +116,7 @@ cd cairo-vm-cli; cargo build --release -F lambdaworks-felt; cd ..
 
 The `-F lambdaworks-felt` part adds usage of [`lambdaworks-math`](https://github.com/lambdaclass/lambdaworks) as the backend for `Felt252`. This improves performance by more than 20%, and will be the default in the future.
 
-Once the binary is built, it can be found in `target/release/` under the name `cairo-rvm-cli`.
+Once the binary is built, it can be found in `target/release/` under the name `cairo-vm-cli`.
 
 To compile a program, use `cairo-compile [path_to_the_.cairo_file] --output [desired_path_of_the_compiled_.json_file]`. For example:
 
@@ -143,7 +143,29 @@ cargo build --release
 
 cairo-compile cairo_programs/abs_value_array.cairo --output cairo_programs/abs_value_array_compiled.json
 
-target/release/cairo-vm-run cairo_programs/abs_value_array_compiled.json --layout all_cairo
+target/release/cairo-vm-cli cairo_programs/abs_value_array_compiled.json --layout all_cairo
+```
+
+#### Other CLI arguments
+
+The cairo-vm-cli supports the following optional arguments:
+
+- `--trace_file <TRACE_FILE>`: Receives the name of a file and outputs the relocated trace into it
+
+- `--memory_file <MEMORY_FILE>` : Receives the name of a file and outputs the relocated memory into it
+
+- `--print_output` : Prints the program output
+
+- `--proof_mode`: Runs the program in proof_mode
+
+- `--secure_run`: Runs security checks after execution. Enabled by default when not in proof_mode
+
+- `--air_public_input <AIR_PUBLIC_INPUT>`: Receives the name of a file and outputs the AIR public inputs into it. Can only be used if proof_mode is also enabled.
+
+For example, to obtain the air public inputs from a fibonacci program run, we can run :
+
+```bash
+  target/release/cairo-vm-cli cairo_programs/proof_programs/fibonacci.json --layout all_cairo --proof_mode --air_public_input fibonacci_public_input.json
 ```
 
 ### Using hints
