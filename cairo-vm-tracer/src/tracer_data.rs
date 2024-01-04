@@ -27,9 +27,18 @@ pub struct InputCodeFile {
 
 impl InputCodeFile {
     fn new(content: &str) -> Self {
-        let lines: Vec<String> = content.lines().map(|line| line.to_string()).collect();
+        // let lines: Vec<String> = content.lines().map(|line| line.to_string()).collect();
+
+        // TODO: All the replace goes away if we use monaco editor for code display
+        let mut lines: Vec<String> = Vec::new();
+        content.lines().for_each(|line| {
+            lines.push(line.replace('<', "&lt;").replace('>', "&gt;").to_string());
+        });
         InputCodeFile {
-            content: content.to_string(),
+            content: content
+                .replace('<', "&lt;")
+                .replace('>', "&gt;")
+                .to_string(),
             lines,
             tags: Vec::new(),
         }
@@ -93,6 +102,7 @@ pub struct TracerData {
     pub(crate) _debug_info: Option<DebugInfo>,
     pub(crate) memory_accesses: Vec<MemoryAccess>,
     pub(crate) input_files: HashMap<String, InputCodeFile>,
+    pub(crate) pc_inst_map: HashMap<usize, String>,
 }
 
 impl TracerData {
@@ -138,6 +148,8 @@ impl TracerData {
         }
 
         let mut memory_accesses: Vec<MemoryAccess> = vec![];
+
+        let mut pc_inst_map: HashMap<usize, String> = HashMap::new();
         //loop of trace
         for entry in trace.iter() {
             let run_context = RunContext::new(Relocatable::from((0, entry.pc)), entry.ap, entry.fp);
@@ -151,6 +163,24 @@ impl TracerData {
             }
             let instruction_encoding = instruction_encoding.unwrap();
             let instruction = decode_instruction(instruction_encoding)?;
+
+            pc_inst_map.insert(
+                entry.pc,
+                std::format!(
+                    "{:?} {:?} {:?} {:?} {:?} {:?} {:?} {:?}",
+                    instruction.opcode,
+                    instruction.off0,
+                    instruction.off1,
+                    instruction.off2,
+                    instruction.dst_register,
+                    instruction.op0_register,
+                    instruction.op1_addr,
+                    instruction.res
+                ),
+            );
+            // if instruction.opcode == cairo_vm::types::instruction::Opcode::NOp {
+            //     dbg!(entry.pc, instruction.pc_update);
+            // }
 
             // get dst_addr
             let dst_addr = run_context.compute_dst_addr(&instruction)?.offset;
@@ -190,6 +220,9 @@ impl TracerData {
             });
         }
 
+        // let pc_inst_map_sorted: BTreeMap<usize, String> = pc_inst_map.into_iter().collect();
+        // dbg!(pc_inst_map_sorted);
+
         Ok(TracerData {
             _program: program,
             memory,
@@ -198,6 +231,7 @@ impl TracerData {
             _debug_info: debug_info,
             memory_accesses,
             input_files,
+            pc_inst_map,
         })
     }
 }

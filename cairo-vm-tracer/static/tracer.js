@@ -5,6 +5,7 @@ var current_step;
 
 var trace;
 var memory;
+var pc_inst_map;
 var memory_accesses;
 
 /*
@@ -22,6 +23,7 @@ function load_json() {
   $.getJSON("data.json", function (data) {
     trace = data.trace;
     memory = data.memory;
+    pc_inst_map = data.pc_inst_map;
     memory_accesses = data.memory_accesses;
     for (const filename in data.code) {
       $("#code_div")
@@ -74,6 +76,7 @@ function create_memory_table() {
         )
         .append($("<td>").text(addr))
         .append($("<td>").text(memory[addr]))
+        .append($("<td>").text(pc_inst_map[addr]))
     );
   }
   return table;

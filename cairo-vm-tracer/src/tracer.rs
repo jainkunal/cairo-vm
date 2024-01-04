@@ -82,6 +82,7 @@ async fn get_data(tracer_data: State<TracerData>) -> Json<DataReponse> {
             .collect(),
         memory_accesses: tracer_data.memory_accesses.clone(),
         public_memory: vec![],
+        pc_inst_map: tracer_data.pc_inst_map.clone(),
     };
 
     // filter a vector of options to remove none values
@@ -134,4 +135,5 @@ struct DataReponse {
     memory: HashMap<usize, String>,
     public_memory: Vec<String>,
     memory_accesses: Vec<MemoryAccess>,
+    pc_inst_map: HashMap<usize, String>,
 }
