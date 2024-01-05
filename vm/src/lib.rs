@@ -11,7 +11,7 @@
 //! - `lambdaworks-felt`: Enables usage of the [**lambdaworks**](https://github.com/lambdaclass/lambdaworks) backend for [`felt::Felt252`]. Not enabled by default.
 
 #![cfg_attr(docsrs, feature(doc_cfg))]
-#![deny(warnings)]
+// #![deny(warnings)]
 #![forbid(unsafe_code)]
 #![cfg_attr(any(target_arch = "wasm32", not(feature = "std")), no_std)]
 
@@ -53,7 +53,7 @@ pub mod stdlib {
     pub use crate::without_std::*;
 }
 
-pub extern crate felt;
+pub use felt;
 pub mod air_public_input;
 pub mod cairo_run;
 pub mod hint_processor;

@@ -62,7 +62,7 @@ impl<'a> Default for CairoRunConfig<'a> {
 
 pub fn cairo_run(
     program_content: &[u8],
-    cairo_run_config: &CairoRunConfig,
+    cairo_run_config: &CairoRunConfig<'_>,
     hint_executor: &mut dyn HintProcessor,
 ) -> Result<(CairoRunner, VirtualMachine), CairoRunError> {
     let program = Program::from_bytes(program_content, Some(cairo_run_config.entrypoint))?;
